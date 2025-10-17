@@ -1,18 +1,14 @@
-DROP DATABASE IF EXISTS babel;
-CREATE DATABASE babel;
-\c babel;
-
 -- Definisikan tipe enum
 
-CREATE TYPE status_pesanan AS ENUM ('Menunggu Pembayaran', 'Pending', 'Selesai', 'Batal');
+CREATE TYPE status_pesanan AS ENUM ('MenungguPembayaran', 'Pending', 'Selesai', 'Batal');
 CREATE TYPE metode_pembayaran AS ENUM ('QRIS', 'Cash', 'Transfer');
 CREATE TYPE status_mesin AS ENUM ('Online', 'Offline', 'Maintenance');
-CREATE TYPE jabatan AS ENUM ('Print Operator', 'Banner Operator', 'DTF Operator', 'Customer Service');
-CREATE TYPE status_pembayaran AS ENUM ('Menunggu Pembayaran', 'Berhasil', 'Batal');
-CREATE TYPE jenis_mesin AS ENUM ('Printer A3+', 'Mesin DTF', 'Mesin Laminating', 'Printer A4', 'Mesin Banner');
+CREATE TYPE jabatan AS ENUM ('PrintOperator', 'BannerOperator', 'DTFOperator', 'CustomerService');
+CREATE TYPE status_pembayaran AS ENUM ('MenungguPembayaran', 'Berhasil', 'Batal');
+CREATE TYPE jenis_mesin AS ENUM ('PrinterA3+', 'MesinDTF', 'MesinLaminating', 'PrinterA4', 'MesinBanner');
 CREATE TYPE jenis_produk AS ENUM ('Cetak', 'Laminating', 'Laminasi', 'Banner', 'DTF');
-CREATE TYPE jenis_bahan AS ENUM ('HVS', 'Laminating', 'Laminasi', 'Banner', 'ID Card', 'DTF PET');
-CREATE TYPE ukuran AS ENUM ('A4', 'A3', 'ID', 'A3+', '100+ CM');
+CREATE TYPE jenis_bahan AS ENUM ('HVS', 'PlastikLaminating', 'PlastikLaminasi', 'Banner', 'IDCard', 'DTFPet');
+CREATE TYPE ukuran AS ENUM ('A4', 'A3', 'ID', 'A3+', 'Kustom');
 
 -- Buat tabel
 
@@ -96,12 +92,12 @@ CREATE TABLE bahan_baku (
 );
 
 CREATE TABLE pemakaian_mesin (
-  id_pesanan        uuid        NOT NULL,
+  id_produksi       int         NOT NULL,
   id_mesin          int         NOT NULL,
   waktu_pemakaian   timestamptz NOT NULL,
-  FOREIGN KEY       (id_pesanan) REFERENCES pesanan (id_pesanan),
+  FOREIGN KEY       (id_produksi) REFERENCES produksi (id_produksi),
   FOREIGN KEY       (id_mesin) REFERENCES mesin (id_mesin),
-  PRIMARY KEY (id_pesanan, id_mesin)
+  PRIMARY KEY (id_produksi, id_mesin)
 );
 
 CREATE TABLE pemakaian_bahan (

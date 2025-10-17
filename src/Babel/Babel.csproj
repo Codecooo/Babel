@@ -6,6 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishAot>true</PublishAot>
+      <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bogus" Version="35.6.4" />
+    <PackageReference Include="Cocona.Lite" Version="2.2.0" />
+    <PackageReference Include="Npgsql" Version="9.0.4" />
+  </ItemGroup>
 
 </Project>
