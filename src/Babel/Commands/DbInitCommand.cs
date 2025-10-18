@@ -6,7 +6,7 @@ namespace Babel.Commands;
 
 public sealed class DbInitCommand
 {
-    [Command("init")]
+    [Command("init", Description = "Insialisasi database babel untuk siap dimasukkan data")]
     public async Task InitDb()
     {
         var connectionString = BuildConnection();
@@ -39,7 +39,7 @@ public sealed class DbInitCommand
         var username = ReadOrDefault("postgres");
         Console.Write("Password: ");
         var password = PasswordInput.SecurePassword();
-        Console.Write("Database (default username): ");
+        Console.Write($"Database (default {username}): ");
         var database = ReadOrDefault(username);
 
         Console.WriteLine();
