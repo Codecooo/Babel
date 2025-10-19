@@ -32,8 +32,8 @@ CREATE TABLE karyawan (
 
 CREATE TABLE produk (
   id_produk         serial          PRIMARY KEY,
-  ukuran            ukuran          NOT NULL,
   nama_produk       text            NOT NULL,
+  ukuran            ukuran          NOT NULL,
   jenis_produk      jenis_produk    NOT NULL,
   harga_per_unit    numeric(12,2)   NOT NULL
 );
@@ -58,7 +58,7 @@ CREATE TABLE pesanan (
   id_pelanggan       uuid              NOT NULL,
   id_karyawan        uuid              NOT NULL,
   id_produksi        int               NOT NULL,
-  tanggal_pesanan    timestamptz       NOT NULL,
+  tanggal_pesanan    timestamp         NOT NULL,
   status_pesanan     status_pesanan    NOT NULL,
   FOREIGN KEY (id_pelanggan) REFERENCES pelanggan (id_pelanggan),
   FOREIGN KEY (id_karyawan) REFERENCES karyawan (id_karyawan),
@@ -69,7 +69,7 @@ CREATE TABLE pembayaran (
   id_pembayaran         uuid                PRIMARY KEY,
   id_pesanan            uuid                NOT NULL,
   metode_pembayaran     metode_pembayaran   NOT NULL,
-  tanggal_pembayaran    timestamptz         NOT NULL,
+  tanggal_pembayaran    timestamp           NOT NULL,
   status_pembayaran     status_pembayaran   NOT NULL,
   total_pembayaran      numeric(12,2)       NOT NULL,
   FOREIGN KEY (id_pesanan) REFERENCES pesanan (id_pesanan) ON DELETE CASCADE
@@ -94,7 +94,7 @@ CREATE TABLE bahan_baku (
 CREATE TABLE pemakaian_mesin (
   id_produksi       int         NOT NULL,
   id_mesin          int         NOT NULL,
-  waktu_pemakaian   timestamptz NOT NULL,
+  waktu_pemakaian   timestamp   NOT NULL,
   FOREIGN KEY       (id_produksi) REFERENCES produksi (id_produksi),
   FOREIGN KEY       (id_mesin) REFERENCES mesin (id_mesin),
   PRIMARY KEY (id_produksi, id_mesin)

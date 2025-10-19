@@ -25,7 +25,7 @@ public static class EnumMappers
             Ukuran.A3Plus => "A3+",
             Ukuran.A4 => "A4",
             Ukuran.ID => "ID",
-            Ukuran.Kustom =>  "Kustom",
+            _ => "Kustom"
         };
     }
 }

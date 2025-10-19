@@ -19,4 +19,14 @@ public static class PembayaranGen
 
         return total;
     }
+
+    public static StatusPembayaran GenerateStatusPembayaran(Pesanan pesanan)
+    {
+        return pesanan.StatusPesanan switch
+        {
+            StatusPesanan.Batal => StatusPembayaran.Batal,
+            StatusPesanan.MenungguPembayaran => StatusPembayaran.MenungguPembayaran,
+            _ => StatusPembayaran.Berhasil
+        };
+    }
 }

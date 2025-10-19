@@ -5,13 +5,11 @@ namespace Babel.Helpers;
 
 public static class RandomBahanGen
 {
-    private static readonly Lazy<string[]> _baseNamaBahan = new(() => 
+    private static readonly Lazy<string[]> BaseNamaBahan = new(() => 
         File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, "data", "nama-bahan.txt")));    
     
-    private static readonly Lazy<string[]> _baseNamaVendor = new(() => 
+    private static readonly Lazy<string[]> BaseNamaVendor = new(() => 
         File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, "data", "vendor-bahan.txt")));
-    
-    private static readonly HashSet<string> _allNamaBahan = new(StringComparer.OrdinalIgnoreCase);
     
     private static List<BahanBaku> _bahanHvs = new();
     private static List<BahanBaku> _bahanLaminasi = new();
@@ -19,6 +17,21 @@ public static class RandomBahanGen
     private static List<BahanBaku> _bahanId = new();
     private static List<BahanBaku> _bahanBanner = new();
     private static List<BahanBaku> _bahanDtf = new();
+    
+    private static readonly Lazy<List<string>> AllCombinations = new(() =>
+    {
+        var faker = new Faker();
+        Randomizer.Seed = new Random(123);
+        
+        var combinatins = (
+            from vendor in BaseNamaVendor.Value
+            from bahan in BaseNamaBahan.Value
+            select $"{vendor} {bahan}"
+        ).ToList();
+
+        // Shuffle 
+        return faker.Random.Shuffle(combinatins).ToList();
+    });
 
     public static void InitializeBahanLists(IEnumerable<BahanBaku> bahanList)
     {
@@ -30,17 +43,15 @@ public static class RandomBahanGen
         _bahanBanner = bahanBakus.Where(b => b.JenisBahan == JenisBahan.Banner).ToList();
         _bahanDtf = bahanBakus.Where(b => b.JenisBahan == JenisBahan.DTFPet).ToList();
     }
-
+    
+    private static int _currentIndex;
+    
     public static string GenerateNamaBahan(Faker faker)
     {
-        while (true)
-        {
-            var bahan = faker.PickRandom(_baseNamaBahan.Value);
-            var vendor = faker.PickRandom(_baseNamaVendor.Value);
-            var name = $"{vendor} {bahan}";
-            if (_allNamaBahan.Add(name))
-                return name;
-        }
+        if (_currentIndex >= AllCombinations.Value.Count)
+            throw new InvalidOperationException("Tidak ada kombinasi unik lagi.");
+
+        return AllCombinations.Value[_currentIndex++];
     }
 
     public static JenisBahan GenerateJenisBahan(string namaBahan)

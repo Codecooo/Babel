@@ -13,6 +13,9 @@ public static class RandomProdukGen
     /// </summary>
     private static readonly Lazy<List<string>> AllProduk = new(() =>
     {
+        var faker = new Faker();
+        Randomizer.Seed = new Random(123);
+        
         string[] colors = ["Color", "Grayscale"];
         string[] attributes = ["Kilat", "Bundle", "Ekonomi", "Spesial", "Standar", "Premium"];
 
@@ -38,7 +41,7 @@ public static class RandomProdukGen
         }
 
         // Shuffle random
-        return all.OrderBy(_ => Random.Shared.Next()).ToList();
+        return faker.Random.Shuffle(all).ToList();
     });
     
     private static readonly Dictionary<string, string[]> MaterialByCategory = new()
@@ -49,8 +52,6 @@ public static class RandomProdukGen
         ["Laminating"] = ["Glossy", "Doff", "PET", ""],
         ["Laminasi"] = ["Glossy", "Doff", "PET", ""]
     };
-
-    private static int _produkIndex;
 
     public static string GenerateNamaProduk(Faker faker)
     {
@@ -92,14 +93,20 @@ public static class RandomProdukGen
 
     public static Ukuran GenerateUkuran(string namaProduk)
     {
-        var prefix = namaProduk.Split(' ', 2)[0];
+        var split = namaProduk.Split(' ', 2);
+        var prefix = split[0];
+        var restName = split[1];
 
+        if ((prefix.Contains("Laminasi") || prefix.Contains("Laminating")) && restName.Contains("Kartu")) return Ukuran.ID;
+
+        if (prefix.Contains("Laminasi") || prefix.Contains("Laminating")) return Ukuran.A3;
         if (prefix != "Cetak") return Ukuran.Kustom;
         
-        if (prefix.Contains("A4")) return Ukuran.A4;
-        if (prefix.Contains("A3")) return Ukuran.A3;
-        if (prefix.Contains("A3+")) return Ukuran.A3Plus;
+        if (restName.Contains("A4") || restName.Contains("Poster")) return Ukuran.A4;
+        if (restName.Contains("A3") || restName.Contains("Buku")) return Ukuran.A3;
+        if (restName.Contains("A3+") || restName.Contains("Art Paper")) return Ukuran.A3Plus;
+        if (restName.Contains("Kartu")) return Ukuran.ID;
 
-        return Ukuran.ID;
+        return Ukuran.A3Plus;
     }
 }

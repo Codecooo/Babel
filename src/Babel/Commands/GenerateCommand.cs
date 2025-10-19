@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Babel.Helpers;
 using Babel.Models;
 using Bogus;
@@ -13,11 +14,14 @@ public sealed class GenerateCommand
     [Command("generate", Aliases = ["gen"], Description = "Membuat mock data untuk database babel")]
     public async Task GenerateData([Argument] int numberOfData, int seed = 123)
     {
+        Stopwatch stopwatch = new();
+        
         _randomSeed = new Random(seed == 0 ? (int)DateTime.Now.Ticks : seed);
         Console.WriteLine("Sedang membuat data fake untuk babel....");
         Console.WriteLine();
         
         // Generate data untuk seluruh tabel
+        stopwatch.Start();
         var pelanggan = GeneratePelanggan(numberOfData);
         var karyawan = GenerateKaryawan(numberOfData);
         var mesin = GenerateMesin(numberOfData);
@@ -37,6 +41,10 @@ public sealed class GenerateCommand
         Console.WriteLine("Data akan disimpan ke dalam file CSV....");
         await SaveToCsv(pelanggan, karyawan, mesin, produksi, pemakaianMesin, pemakaianBahan, produk, pembayaran,
             detailPesanan, pesanan, bahanBaku);
+        stopwatch.Stop();
+        
+        Console.ResetColor();
+        Console.WriteLine($"Waktu untuk generate data dan menyimpan ke disk sebanyak {stopwatch.ElapsedMilliseconds} ms");
     }
 
     private List<Pelanggan> GeneratePelanggan(int numberOfData)
@@ -218,16 +226,20 @@ public sealed class GenerateCommand
             .StrictMode(true)
             .RuleFor(p => p.IdPembayaran, f => f.Random.Guid())
             .RuleFor(p => p.MetodePembayaran, f => f.PickRandom<MetodePembayaran>())
-            .RuleFor(p => p.StatusPembayaran, f => f.PickRandom<StatusPembayaran>())
             .RuleFor(p => p.TanggalPembayaran, f => f.Date.Between(ReferenceDate.AddMonths(-12), ReferenceDate))
             .RuleFor(p => p.IdPesanan, f =>
             {
                 if (availablePesanan.Count == 0)
-                    throw new InvalidOperationException("Tidak ada pesanan tersisa untuk relasi satu-ke-satu.");
+                    throw new InvalidOperationException("Tidak ada pesanan tersisa untuk relasi one to one.");
 
                 var selected = f.PickRandom(availablePesanan);
                 availablePesanan.Remove(selected);
                 return selected.IdPesanan;
+            })
+            .RuleFor(p => p.StatusPembayaran, (_, p) =>
+            {
+                var pesanan = listPesanan.FirstOrDefault(pe => pe.IdPesanan == p.IdPesanan);
+                return PembayaranGen.GenerateStatusPembayaran(pesanan);
             })
             .RuleFor(p => p.TotalPembayaran, (_, p) =>
             {
@@ -262,22 +274,43 @@ public sealed class GenerateCommand
         return list;
     }
 
-    private List<PemakaianMesin> GeneratePemakaianMesin(int numberOfData, List<Mesin> listMesin,
+    private List<PemakaianMesin> GeneratePemakaianMesin(
+        int numberOfData,
+        List<Mesin> listMesin,
         List<Produksi> listProduksi)
     {
         Randomizer.Seed = _randomSeed;
+        var faker = new Faker();
+        var result = new List<PemakaianMesin>(numberOfData);
+        var usedPairs = new HashSet<(int produksi, int mesin)>();
 
-        var faker = new Faker<PemakaianMesin>(locale: "id_ID")
-            .StrictMode(true)
-            .RuleFor(p => p.IdProduksi, f => f.PickRandom(listProduksi).IdProduksi)
-            .RuleFor(p => p.IdMesin, f => f.PickRandom(listMesin).IdMesin)
-            .RuleFor(p => p.WaktuPemakaian, f => f.Date.Between(ReferenceDate.AddMonths(-12), ReferenceDate));
-        
-        var list = faker.Generate(numberOfData);
-        
+        int maxProduksi = listProduksi.Count;
+        int maxMesin = listMesin.Count;
+
+        // Maksimum kombinasi sesuai data yang inginkan
+        int maxPossible = maxProduksi * maxMesin;
+        if (numberOfData > maxPossible)
+            numberOfData = maxPossible;
+
+        while (result.Count < numberOfData)
+        {
+            var produksi = faker.PickRandom(listProduksi).IdProduksi;
+            var mesin = faker.PickRandom(listMesin).IdMesin;
+
+            var pair = (produksi, mesin);
+            if (!usedPairs.Add(pair))
+                continue; // duplikat, skip
+
+            result.Add(new PemakaianMesin(
+                IdProduksi: produksi,
+                IdMesin: mesin,
+                WaktuPemakaian: faker.Date.Between(ReferenceDate.AddMonths(-12), ReferenceDate)
+            ));
+        }
+
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("✅ Data pemakaian mesin berhasil dibuat!");
-        return list;
+        return result;
     }
 
     private List<PemakaianBahan> GeneratePemakaianBahan(List<BahanBaku> listBahan, List<Produk> listProduk)
@@ -313,12 +346,12 @@ public sealed class GenerateCommand
             Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "mesin.csv"), listMesin)),
             Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "produksi.csv"), listProduksi)),
             Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "produk.csv"), listProduk)),
-            Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "pemakaian-mesin.csv"), listPemakaianMesin)),
-            Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "pemakaian-bahan.csv"), listPemakaianBahan)),
+            Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "pemakaian_mesin.csv"), listPemakaianMesin)),
+            Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "pemakaian_bahan.csv"), listPemakaianBahan)),
             Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "pembayaran.csv"), listPembayaran)),
-            Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "detail-pesanan.csv"), listDetailPesanan)),
+            Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "detail_pesanan.csv"), listDetailPesanan)),
             Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "pesanan.csv"), listPesanan)),
-            Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "bahan.csv"), listBahan)),
+            Task.Run(() => CsvOps.WriteCsv(Path.Combine(path, "bahan_baku.csv"), listBahan)),
         };
         
         await Task.WhenAll(tasks);
