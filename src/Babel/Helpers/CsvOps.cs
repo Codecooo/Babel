@@ -21,9 +21,17 @@ public static class CsvOps
         await using var csv = new CsvWriter(writer, config);
 
         // Konversi format datetime ke format ISO
-        var options = new TypeConverterOptions { Formats = ["yyyy-MM-dd HH:mm:ss"] };
+        var options = new TypeConverterOptions
+        {
+            Formats = ["yyyy-MM-dd HH:mm:ss"]
+        };
+
+        var dateTimeOnly = new TypeConverterOptions()
+        {
+            Formats = ["yyyy-MM-dd"]
+        };
         csv.Context.TypeConverterOptionsCache.AddOptions<DateTime>(options);
-        csv.Context.TypeConverterOptionsCache.AddOptions<DateTime?>(options);
+        csv.Context.TypeConverterOptionsCache.AddOptions<DateOnly>(dateTimeOnly);
 
         await csv.WriteRecordsAsync(contents);
     }
