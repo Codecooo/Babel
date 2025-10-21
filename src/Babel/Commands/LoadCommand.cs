@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using Babel.Helpers;
 using Cocona;
 using Npgsql;
@@ -12,7 +13,8 @@ public sealed class LoadCommand
     {
         Stopwatch stopwatch = new();
         var connectionString = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "connection-string.txt"));
-
+        
+        Console.OutputEncoding = Encoding.UTF8;
         Console.WriteLine("Data akan dimuat ke database...");
         Console.WriteLine();
         stopwatch.Start();

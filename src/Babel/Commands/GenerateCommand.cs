@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using Babel.Helpers;
 using Babel.Models;
 using Bogus;
@@ -17,6 +18,7 @@ public sealed class GenerateCommand
         Stopwatch stopwatch = new();
         
         _randomSeed = new Random(seed == 0 ? (int)DateTime.Now.Ticks : seed);
+        Console.OutputEncoding = Encoding.UTF8;
         Console.WriteLine("Sedang membuat data fake untuk babel....");
         Console.WriteLine();
         
