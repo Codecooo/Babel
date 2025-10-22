@@ -282,37 +282,28 @@ public sealed class GenerateCommand
         List<Produksi> listProduksi)
     {
         Randomizer.Seed = _randomSeed;
-        var faker = new Faker();
-        var result = new List<PemakaianMesin>(numberOfData);
-        var usedPairs = new HashSet<(int produksi, int mesin)>();
+        
+        var availableProduksi = new List<Produksi>(listProduksi.Take(numberOfData));
 
-        int maxProduksi = listProduksi.Count;
-        int maxMesin = listMesin.Count;
+        var faker = new Faker<PemakaianMesin>(locale: "id_ID")
+            .StrictMode(true)
+            .RuleFor(p => p.IdProduksi, f =>
+            {
+                if (availableProduksi.Count() == 0)
+                    throw new InvalidOperationException("Tidak ada produksi yang tersisa untuk relasi many to many");
 
-        // Maksimum kombinasi sesuai data yang inginkan
-        int maxPossible = maxProduksi * maxMesin;
-        if (numberOfData > maxPossible)
-            numberOfData = maxPossible;
-
-        while (result.Count < numberOfData)
-        {
-            var produksi = faker.PickRandom(listProduksi).IdProduksi;
-            var mesin = faker.PickRandom(listMesin).IdMesin;
-
-            var pair = (produksi, mesin);
-            if (!usedPairs.Add(pair))
-                continue; // duplikat, skip
-
-            result.Add(new PemakaianMesin(
-                IdProduksi: produksi,
-                IdMesin: mesin,
-                WaktuPemakaian: faker.Date.Between(ReferenceDate.AddMonths(-12), ReferenceDate)
-            ));
-        }
-
+                var selected = f.PickRandom(availableProduksi);
+                availableProduksi.Remove(selected);
+                return selected.IdProduksi;
+            })
+            .RuleFor(p => p.IdMesin, f => f.PickRandom(listMesin).IdMesin)
+            .RuleFor(p => p.WaktuPemakaian, f => f.Date.Between(ReferenceDate.AddMonths(-12), ReferenceDate));
+        
+        var list = faker.Generate(numberOfData);
+        
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("✅ Data pemakaian mesin berhasil dibuat!");
-        return result;
+        return list;
     }
 
     private List<PemakaianBahan> GeneratePemakaianBahan(List<BahanBaku> listBahan, List<Produk> listProduk)
